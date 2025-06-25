@@ -9,10 +9,13 @@ use App\Models\Product;
 use Illuminate\View\View;
 
 //import return type redirectResponse
-use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 
 //import Http Request
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+
+//import Facades Storage
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -59,7 +62,7 @@ class ProductController extends Controller
 
         //upload image
         $image = $request->file('image');
-        $image->storeAs('products', $image->hashName());
+        $image->storeAs('public/products', $image->hashName());
 
         //create product
         Product::create([
@@ -72,5 +75,90 @@ class ProductController extends Controller
 
         //redirect to index
         return redirect()->route('products.index')->with(['success' => 'Data Berhasil Disimpan!']);
+    }
+    
+    /**
+     * show
+     *
+     * @param  mixed $id
+     * @return View
+     */
+    public function show(string $id): View
+    {
+        //get product by ID
+        $product = Product::findOrFail($id);
+
+        //render view with product
+        return view('products.show', compact('product'));
+    }
+    
+    /**
+     * edit
+     *
+     * @param  mixed $id
+     * @return View
+     */
+    public function edit(string $id): View
+    {
+        //get product by ID
+        $product = Product::findOrFail($id);
+
+        //render view with product
+        return view('products.edit', compact('product'));
+    }
+        
+    /**
+     * update
+     *
+     * @param  mixed $request
+     * @param  mixed $id
+     * @return RedirectResponse
+     */
+    public function update(Request $request, $id): RedirectResponse
+    {
+        //validate form
+        $request->validate([
+            'image'         => 'image|mimes:jpeg,jpg,png|max:2048',
+            'title'         => 'required|min:5',
+            'description'   => 'required|min:10',
+            'price'         => 'required|numeric',
+            'stock'         => 'required|numeric'
+        ]);
+
+        //get product by ID
+        $product = Product::findOrFail($id);
+
+        //check if image is uploaded
+        if ($request->hasFile('image')) {
+
+						//delete old image
+            Storage::delete('products/'.$product->image);
+
+            //upload new image
+            $image = $request->file('image');
+            $image->storeAs('products', $image->hashName());
+
+            //update product with new image
+            $product->update([
+                'image'         => $image->hashName(),
+                'title'         => $request->title,
+                'description'   => $request->description,
+                'price'         => $request->price,
+                'stock'         => $request->stock
+            ]);
+
+        } else {
+
+            //update product without image
+            $product->update([
+                'title'         => $request->title,
+                'description'   => $request->description,
+                'price'         => $request->price,
+                'stock'         => $request->stock
+            ]);
+        }
+
+        //redirect to index
+        return redirect()->route('products.index')->with(['success' => 'Data Berhasil Diubah!']);
     }
 }
