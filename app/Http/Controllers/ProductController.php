@@ -131,12 +131,12 @@ class ProductController extends Controller
         //check if image is uploaded
         if ($request->hasFile('image')) {
 
-						//delete old image
-            Storage::delete('products/'.$product->image);
-
             //upload new image
             $image = $request->file('image');
-            $image->storeAs('products', $image->hashName());
+            $image->storeAs('public/products', $image->hashName());
+
+            //delete old image
+            Storage::delete('public/products/'.$product->image);
 
             //update product with new image
             $product->update([
@@ -174,7 +174,7 @@ class ProductController extends Controller
         $product = Product::findOrFail($id);
 
         //delete image
-        Storage::delete('products/'. $product->image);
+        Storage::delete('public/products/'. $product->image);
 
         //delete product
         $product->delete();
